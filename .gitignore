@@ -1,0 +1,4 @@
+node_modules/
+docs/
+__pycache__/
+data/prices.json

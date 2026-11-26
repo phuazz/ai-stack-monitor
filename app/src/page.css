@@ -1,0 +1,7 @@
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--t1);font:16px/1.48 var(--sans)}
+#dashboard{padding:0 clamp(8px,2vw,36px)}
+.publication{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0 8px;border-bottom:1px solid var(--bd);font:500 14px var(--sans);color:var(--t2)}
+.publication a{color:var(--b-text)}
+button,input,select{font-family:inherit}
+.chart-card{min-width:0;background:var(--bg2);border:1px solid var(--bd);padding:12px;border-radius:var(--radius)}

@@ -1,0 +1,19 @@
+{
+  "name": "ai-stack-monitor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "smoke": "node scripts/check_page.mjs"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "playwright-core": "1.57.0",
+    "vite": "7.3.8",
+    "vite-plugin-singlefile": "2.3.3"
+  }
+}

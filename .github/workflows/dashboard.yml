@@ -1,0 +1,113 @@
+name: AI stack dashboard
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Singapore is UTC+8. Check at 09:00, then hourly through 15:00 for delayed data.
+    - cron: '0 1-7 * * 2-6'
+  workflow_dispatch:
+    inputs:
+      verify_provider:
+        description: Fetch and reconcile vendor prices even when the saved session is current
+        type: boolean
+        default: false
+
+concurrency:
+  group: ai-stack-production
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+      digest: ${{ steps.package.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: pip install -r requirements.txt
+      - name: Check market calendar and refresh
+        env:
+          REVALIDATE: ${{ inputs.verify_provider }}
+        run: |
+          python scripts/test_refresh.py
+          if [[ "$GITHUB_EVENT_NAME" != push ]]; then
+            if [[ "$REVALIDATE" == true ]]; then
+              python scripts/refresh.py --verify-provider
+            else
+              python scripts/refresh.py
+            fi
+          fi
+      - name: Compare with live release
+        id: check
+        run: |
+          url=https://phuazz.github.io/ai-stack-monitor
+          live=$(curl --fail --silent --max-time 15 "$url/version.json?run=$GITHUB_RUN_ID") || live='{}'
+          publish=true
+          if [[ "$(jq -r .commit <<< "$live")" == "$(git rev-parse HEAD)" ]] && git diff --quiet -- app/src; then
+            expected=$(jq -r .sha256 <<< "$live")
+            if curl -fsSL --max-time 30 "$url/?run=$GITHUB_RUN_ID" -o /tmp/live.html && echo "$expected  /tmp/live.html" | sha256sum --check --status; then publish=false; fi
+          fi
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+      - name: Build and exercise the release
+        if: steps.check.outputs.publish == 'true'
+        run: |
+          npm ci --ignore-scripts --no-fund --no-audit
+          node scripts/check_attribution.mjs
+          npm run build
+          python scripts/check_page.py docs/index.html
+          npm run smoke
+      - name: Record the verified market data and package identity
+        id: package
+        if: steps.check.outputs.publish == 'true'
+        run: |
+          git add -- app/src/data.json app/src/content/dashboard/reference-prices.json
+          if ! git diff --cached --quiet; then
+            git -c user.name=github-actions[bot] -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -m "Refresh AI stack for $(jq -r .asOf app/src/data.json)"
+            git push origin HEAD:main
+          fi
+          git fetch --quiet origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          digest=$(sha256sum docs/index.html | cut -d' ' -f1)
+          jq -n --arg commit "$(git rev-parse HEAD)" --arg asOf "$(jq -r .asOf app/src/data.json)" --arg sha256 "$digest" '{commit:$commit,asOf:$asOf,sha256:$sha256}' > docs/version.json
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.check.outputs.publish == 'true'
+        with:
+          path: docs
+  deploy:
+    needs: prepare
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@v4
+      - name: Verify published HTML against the tested build
+        env:
+          PAGE_URL: ${{ steps.pages.outputs.page_url }}
+          EXPECTED: ${{ needs.prepare.outputs.digest }}
+        run: |
+          for attempt in {1..12}; do
+            if curl -fsSL --max-time 25 "${PAGE_URL}?release=$GITHUB_RUN_ID-$attempt" -o /tmp/dashboard.html && echo "$EXPECTED  /tmp/dashboard.html" | sha256sum --check --status; then exit 0; fi
+            sleep 10
+          done
+          exit 1

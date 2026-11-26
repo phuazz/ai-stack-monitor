@@ -1,9 +1,13 @@
 # AI stack monitor
 
-[Open the dashboard](https://phuazz.github.io/ai-stack-monitor/#heatmap)
+[Open the heatmap](https://phuazz.github.io/ai-stack-monitor/) · [Refresh history](https://github.com/phuazz/ai-stack-monitor/actions/workflows/dashboard.yml) · [Published close and release identifier](https://phuazz.github.io/ai-stack-monitor/version.json)
 
-This standalone personal research snapshot covers 13 AI layers with adjusted closes through 25 November 2026. The heatmap compares absolute USD returns, returns versus the S&P 500 ETF, and returns versus each layer’s benchmark. A stock or basket name opens its price history and drivers.
+The root URL opens a full-width, standalone heatmap of 13 AI layers. The investor map, weekly reversals, reference stocks, signal history, individual charts and PowerPoint exports are available from the dashboard. Prices are Yahoo Finance adjusted US closes. The price date appears above the heatmap. News and company disclosures carry their own dates.
 
-Choose **Export chart for PowerPoint** beside a trend chart to copy or download a 2880 × 1620 PNG. The image identifies its series, chart dates, return basis and moving averages. The heatmap has its own image export.
+GitHub Actions checks at 09:00 Singapore time Tuesday through Saturday, then hourly through 15:00. The runner uses the New York exchange calendar and a two-hour allowance after the close. A holiday or a current, verified release needs no new publication. Publishing a new close requires complete layer and reference coverage, independent return and attribution checks, and a browser test at 390, 844, 768 and 1280 px. After deployment, the workflow compares the live HTML with the tested build. A failed data or build check preserves the prior release. The GitHub job runs independently of the ChatGPT Site and the owner's computer.
 
-GitHub Pages serves the checked-in snapshot. Prices and news change when a new snapshot is published. Price source: Yahoo Finance adjusted closes.
+## Local use
+
+Use Node 24 and Python 3.12. Run `npm ci` and `npm run dev` for the standalone interface. Run `npm run build` to create `docs/index.html`. With Chrome installed, `npm run smoke` exercises the built page and its chart export.
+
+Install `requirements.txt` and run `python scripts/refresh.py` to check the saved close or rebuild from market sources. Use a clean checkout for a refresh. The runner captures in its isolated checkout and stages only verified data. The core construction lives in `scripts/pipeline.py`. Reference history and longer chart histories are separate inputs. The **Run workflow** control supports a manual check and optional vendor revalidation.
