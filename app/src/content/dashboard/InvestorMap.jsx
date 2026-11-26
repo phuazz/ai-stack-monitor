@@ -1,13 +1,14 @@
+import DashboardNav from "./DashboardNav.jsx";
 import React from "react";
 import {shortDate} from "./HistoryChart.jsx";
 import {weeklyBrief,pct,pp} from "./weekly-brief.mjs";
 
 const tone=n=>n>0?"gain":n<0?"loss":"";
-export default function InvestorMap({snapshot,period,control,onPick,onWatch}){
+export default function InvestorMap({snapshot,period,control,onPick}){
   const b=weeklyBrief(snapshot,period);
   const focus=b.focal,split=b.dispersion,news=b.news[0];
   const focusTitle=focus.change==="Rebounding"?"Strongest rebound":focus.change==="Turning down"?"Largest reversal down":"Relative leader";
-  return <section className="pm-map">
+  return <section className="pm-map"><DashboardNav active="map"/>
     <header className="pm-header"><div><h1>AI investor map</h1><p className="basis">{shortDate(b.start)} – {shortDate(b.end)} · {b.sessions} US sessions · Yahoo Finance adjusted closes</p></div>{control}</header>
     <h2 className="pm-headline">{b.headline}</h2>
     <p className="pm-market">{b.marketRead}</p>
@@ -41,6 +42,6 @@ export default function InvestorMap({snapshot,period,control,onPick,onWatch}){
     <p className="basis">Foundation models use Meta as a single-stock reference. The headline counts each of the 12 multi-stock baskets once. Stock contributions are percentage points of the basket’s relative return. US-listed share prices reflect each company’s full business.</p>
     <details className="pm-signals"><summary>Signal changes this week ({b.rows.reduce((n,r)=>n+r.events.length,0)})</summary>
       {b.rows.flatMap(r=>r.events.map(e=><button key={[r.id,e.known,e.date,e.state].join("-")} onClick={()=>onPick(r.id,null,e.known+e.side,e.state!=="Observed")}>{r.name} · {e.side} divergence {e.state.toLowerCase()} · {shortDate(e.date)}</button>))}</details>
-    <nav aria-label="More AI stack research"><a href="#heatmap">Heatmap</a><a href="#reversals">Weekly reversals</a><button onClick={onWatch}>Signal watchlist</button><a href="#outcomes">Historical signal returns</a><a href="#coverage">Stock coverage</a></nav>
+
   </section>;
 }

@@ -15,8 +15,8 @@ export function WeekControl({period,onChange}){
   </select></label>;
 }
 
-export function WeeklyMap({snapshot,period,onPeriod,onPick,onWatch}){
-  return <InvestorMap {...{snapshot,period,onPick,onWatch}} control={<WeekControl period={period} onChange={onPeriod}/>}/>;
+export function WeeklyMap({snapshot,period,onPeriod,onPick}){
+  return <InvestorMap {...{snapshot,period,onPick}} control={<WeekControl period={period} onChange={onPeriod}/>}/>;
 }
 
 export function WeeklyDetail({snapshot,id,period,onPickStock,onPickEvent}){

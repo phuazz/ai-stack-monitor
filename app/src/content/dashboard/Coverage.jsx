@@ -1,3 +1,4 @@
+import DashboardNav from "./DashboardNav.jsx";
 import React,{useState} from "react";
 import {shortDate} from "./HistoryChart.jsx";
 import {periods,startIndex} from "./heatmap-data.mjs";
@@ -49,7 +50,7 @@ export default function Coverage({snapshot}){
   const chartLink=(r)=>snapshot.groups[r.main].members.includes(r.symbol)?"#layer-"+r.main:
     "?reference="+r.symbol+"&layer="+r.main+"&basis="+(basis==="market"?"market":"absolute")+"&period="+period+"&asof="+end+"#heatmap";
   return <section className="coverage-view heat-view">
-    <nav className="cov-nav" aria-label="AI research"><a href="#map">Investor map</a><a href="#reversals">Weekly reversals</a><a href={"?period="+period+"#heatmap"}>Heatmap</a></nav>
+    <DashboardNav active="coverage" links={{heatmap:"?period="+period+"#heatmap"}}/>
     <header className="cov-header"><div><h1>Stock and basket coverage</h1>
       <p>Explore {groups.length} AI layers and see where individual stocks fit.</p></div>
       <label className="choice">Find a company, ticker or layer<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="e.g. NET or cloud"/></label></header>

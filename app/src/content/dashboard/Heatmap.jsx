@@ -1,3 +1,4 @@
+import DashboardNav from "./DashboardNav.jsx";
 import React,{useEffect,useMemo,useRef,useState} from "react";
 import {shortDate} from "./HistoryChart.jsx";
 import {periods,onOrBefore,startIndex,performance} from "./heatmap-data.mjs";
@@ -152,7 +153,7 @@ export default function Heatmap({snapshot}){
     </div></td></tr>;
   }
   const eligibleSignals=[...bucket.values()].reduce((n,r)=>n+r.n,0);
-  return <section className="heat-view"><a className="action" href="#map">← Investor map</a> <a className="action" href={"?asof="+(end||snapshot.asOf)+"#reversals"}>Weekly reversals →</a> <a className="action" href="#coverage">Stock coverage</a><h1>AI stack heatmap</h1>
+  return <section className="heat-view"><DashboardNav active="heatmap" links={{reversals:"?asof="+(end||snapshot.asOf)+"#reversals"}}/><h1>AI stack heatmap</h1>
     <div className="selectors"><Select label="Show" value={mode} set={setMode} opts={[["prices","Basket performance"],["signals","Historical signal outcomes"]]}/>
       <Select label="Period" value={period} set={setPeriod} opts={Object.entries(periods)}/>
       {period==="custom"&&<label className="choice">Start date<input aria-label="Start date" type="date" min={dates[0]} max={endDate} value={startInput} onChange={e=>setCustom(e.target.value)}/></label>}

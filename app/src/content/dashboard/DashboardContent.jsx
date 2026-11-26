@@ -1,3 +1,4 @@
+import DashboardNav from "./DashboardNav.jsx";
 import React, { useEffect, useState } from "react";
 import snapshot from "../../data.json";
 import HistoryChart, {shortDate} from "./HistoryChart.jsx";
@@ -158,8 +159,9 @@ export function DashboardContent(){
   if(review==="#coverage")return <article className="ai-monitor"><Coverage snapshot={snapshot}/></article>;
   if(!review||review==="#heatmap")return <article className="ai-monitor"><Heatmap snapshot={snapshot}/></article>;
   if(study)return <article className="ai-monitor"><Outcomes snapshot={snapshot}/></article>;
-  return <article className="ai-monitor">{!group?(watch?<Watchlist snapshot={snapshot} period={period} onPeriod={setPeriod} onPick={pick} onMap={()=>overview(false)}/>:<WeeklyMap snapshot={snapshot} period={period} onPeriod={setPeriod} onPick={pick} onWatch={()=>overview(true)}/>):<>
-    <div className="mast"><div className="selectors"><button className="action" onClick={()=>overview(false)}>← Investor map</button><button className="action" onClick={()=>overview(true)}>{watch?"← Watchlist":"Signal watchlist"}</button><a className="action" href="#coverage">Stock coverage</a></div><WeekControl period={period} onChange={n=>{setPeriod(n);pick(active)}}/></div>
+  return <article className="ai-monitor">{!group?(watch?<Watchlist snapshot={snapshot} period={period} onPeriod={setPeriod} onPick={pick}/>:<WeeklyMap snapshot={snapshot} period={period} onPeriod={setPeriod} onPick={pick}/>):<>
+    <DashboardNav active={watch?"watchlist":"map"} onReturn={()=>overview(watch)}/>
+    <div className="mast"><WeekControl period={period} onChange={n=>{setPeriod(n);pick(active)}}/></div>
     <div className="section-head"><small>L{Object.keys(snapshot.groups).indexOf(active)} · {group.title}</small><h2>{group.name}</h2>
       {group.members.length>1 && <p className="basis">{group.context}</p>}</div>
     <WeeklyDetail snapshot={snapshot} id={active} period={period} onPickStock={s=>pick(active,s)} onPickEvent={(event,showOutcome)=>pick(active,null,event,showOutcome)}/>

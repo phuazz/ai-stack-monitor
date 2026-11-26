@@ -1,3 +1,4 @@
+import DashboardNav from "./DashboardNav.jsx";
 import React,{useState} from "react";
 import {shortDate} from "./HistoryChart.jsx";
 
@@ -55,8 +56,7 @@ export default function Outcomes({snapshot}){
     return <td><b>{pct(s[metric])}</b><small>{s.n} of {total} flags</small></td>;
   }
   return <section className="outcomes">
-    <a className="action" href="#watchlist">← Signal watchlist</a>
-    <a className="action" href="#heatmap">Heatmap by period →</a>
+    <DashboardNav active="outcomes"/>
     <h1>What happened after a flag?</h1>
     <p className="basis">{signals} historical flags · {confirmations} confirmed · adjusted US closes through {shortDate(snapshot.asOf)} · Yahoo Finance</p>
     <div className="selectors"><Control label="Signal" value={side} change={setSide} options={[["Bullish","Bullish divergence"],["Bearish","Relative exhaustion"]]}/>

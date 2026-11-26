@@ -54,6 +54,32 @@ try{
     await dialog.getByRole("button",{name:"Close",exact:true}).click();
     await page.getByRole("link",{name:/Weekly reversals/}).first().click();
     await page.locator(".reversal-view").waitFor();
+    const nav=page.getByRole("navigation",{name:"Dashboard sections"});
+    assert.equal(await nav.locator('[aria-current="page"]').innerText(),"Weekly reversals");
+    const rev=page.locator(".reversal-view");
+    assert.equal(await rev.locator("[data-layer-review]").count(),13);
+    await rev.locator('[data-layer-review="cloud"] summary').click();
+    assert.equal(await rev.locator('[data-layer-review="cloud"] tbody tr').count(),snapshot.groups.cloud.members.length);
+    await rev.getByLabel("Show layers").selectOption("up");
+    for(const text of await rev.locator("[data-layer-review] summary").allTextContents())assert.ok(text.includes("Turned up"));
+    await rev.getByRole("button",{name:"Reference stock gaps"}).click();
+    assert.ok(await rev.locator("[data-gap-pair]").count()>0);
+    for(const mode of ["Reference stock gaps","Layer reversals"]){
+      await rev.getByRole("button",{name:mode}).click();
+      const m=await rev.evaluate(root=>{
+        const doc=root.ownerDocument,p=root.querySelector(".rv-header p"),ctx=doc.createElement("canvas").getContext("2d");
+        ctx.font=getComputedStyle(p).font;
+        const nodes=[...root.querySelectorAll("*")].filter(el=>el.getClientRects().length&&[...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim()));
+        return {width:doc.documentElement.clientWidth,overflow:doc.documentElement.scrollWidth-doc.documentElement.clientWidth,
+          minFont:Math.min(...nodes.map(n=>parseFloat(getComputedStyle(n).fontSize))),chars:Math.round(p.clientWidth*p.innerText.length/ctx.measureText(p.innerText).width)};
+      });
+      assert.equal(m.width,width);assert.equal(m.overflow,0);assert.ok(m.minFont>=11);console.log(mode,JSON.stringify(m));
+    }
+    for(const dest of ["Stock coverage","Signal watchlist","Historical returns","Investor map"]){
+      await nav.getByRole("link",{name:dest,exact:true}).click();
+      await nav.locator('[aria-current="page"]').filter({hasText:dest}).waitFor();
+      assert.equal(await nav.getByRole("link").count(),6);
+    }
     await page.goto(base+"#map",{waitUntil:"domcontentloaded"});
     const map=page.locator(".pm-map");
     await map.getByRole("heading",{name:"AI investor map",exact:true}).waitFor();
@@ -116,7 +142,8 @@ try{
     for(const selector of [".inline-heading h3",".layer-trend > h3"]){
       const title=page.locator(".inline-panel "+selector);
       const bounds=await title.boundingBox();
-      assert.ok(bounds&&bounds.y>=0&&bounds.y+bounds.height<=height,"Heading clipped on email entry: "+selector);
+      const navBounds=await nav.boundingBox();
+      assert.ok(bounds&&navBounds&&bounds.y>=navBounds.y+navBounds.height-1&&bounds.y+bounds.height<=height,"Heading clipped on email entry: "+selector);
       console.log("Email heading",width,selector,Math.round(bounds.y));
     }
     assert.deepEqual(errors,[]);console.log(JSON.stringify(metrics));await page.close();

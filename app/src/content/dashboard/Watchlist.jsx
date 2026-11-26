@@ -1,3 +1,4 @@
+import DashboardNav from "./DashboardNav.jsx";
 import React, {useState} from "react";
 import {shortDate} from "./HistoryChart.jsx";
 import {WeekControl,stockName} from "./Weekly.jsx";
@@ -48,7 +49,7 @@ function Signal({item,snapshot,end,onPick}) {
   </section>;
 }
 
-export default function Watchlist({snapshot,period,onPeriod,onPick,onMap}) {
+export default function Watchlist({snapshot,period,onPeriod,onPick}) {
   const [layer,setLayer]=useState("all"),[side,setSide]=useState("all"),[archiveId,setArchiveId]=useState("");
   const groups=Object.entries(snapshot.groups);
   const {start,end}=groups[0][1].weeks[period];
@@ -64,10 +65,9 @@ export default function Watchlist({snapshot,period,onPeriod,onPick,onMap}) {
   const count=kind=>watching.filter(item=>item.event.side===kind).length;
   const card=item=><Signal key={signalId(item)} item={item} snapshot={snapshot} end={end} onPick={onPick}/>;
   return <>
-    <div className="mast"><button className="action" onClick={onMap}>← Investor map</button><WeekControl period={period} onChange={v=>{setArchiveId("");onPeriod(v)}}/></div>
-    <h1>Signal watchlist</h1>
-    <a className="action" href="#outcomes">What happened after past flags? →</a>
-    <a className="action" href="#heatmap">Compare periods in the heatmap →</a>
+    <DashboardNav active="watchlist"/>
+    <div className="mast"><h1>Signal watchlist</h1><WeekControl period={period} onChange={v=>{setArchiveId("");onPeriod(v)}}/></div>
+
     <p className="basis">US close {shortDate(end)} · 12 breadth baskets across 13 layers · Yahoo Finance adjusted closes</p>
     <div className="selectors"><label className="choice">Layer<select aria-label="Layer" value={layer} onChange={e=>{setLayer(e.target.value);setArchiveId("")}}>
       <option value="all">All 13 layers</option>{groups.map(([id,g],i)=><option key={id} value={id}>L{i} · {g.title} · {g.members.length===1?"single reference":all.filter(item=>item.id===id&&open(item)).length+" open"}</option>)}
