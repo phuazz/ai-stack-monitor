@@ -1,4 +1,5 @@
 import React,{useLayoutEffect,useRef} from "react";
+import {chooseLanguage,language} from "../../locale.js";
 
 const pages=[
   ["heatmap","Heatmap"],["map","Investor map"],["reversals","Weekly reversals"],
@@ -19,5 +20,8 @@ export default function DashboardNav({active,links={},onReturn}){
     {pages.map(([id,label])=><a key={id} href={links[id]??("#"+id)}
       aria-current={active===id?"page":undefined}
       onClick={active===id&&onReturn?event=>{if(!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onReturn();}}:undefined}>{label}</a>)}
-  </nav>;
+    <span className="language-switch" role="group" aria-label="English / 简体中文">
+      {[["en","English"],["zh-CN","简体中文"]].map(([code,label])=><button key={code} type="button" lang={code}
+        aria-pressed={language()===code} onClick={()=>chooseLanguage(code)}>{label}</button>)}
+    </span></nav>;
 }

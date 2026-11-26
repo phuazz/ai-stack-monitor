@@ -4,6 +4,7 @@ import {shortDate} from "./HistoryChart.jsx";
 import Newsflow from "./Newsflow.jsx";
 import ReferenceGaps from "./ReferenceGaps.jsx";
 import DashboardNav from "./DashboardNav.jsx";
+import {compactCompany} from "../../locale.js";
 
 const signed=(v,unit)=>v==null?"—":(v>0?"+":"")+v.toFixed(2)+unit;
 function Leg({title,window,lead,limit}){
@@ -15,6 +16,7 @@ function Leg({title,window,lead,limit}){
 }
 export default function Reversals({snapshot}){
   const market=snapshot.marketCloses,dates=Object.keys(market).sort();
+  const company=symbol=>compactCompany(symbol,snapshot.instruments);
   const initial=new URLSearchParams(location.search).get("asof");
   const [asof,setDate]=useState(Object.hasOwn(market,initial)?initial:snapshot.asOf);
   const [view,setView]=useState("layers"),[direction,setDirection]=useState("all");
@@ -54,11 +56,11 @@ export default function Reversals({snapshot}){
         <span><small>L{i} · {single?"Single-stock reference":r.status}</small><b>{g.name}</b><small>vs {g.label}</small></span>
         <Leg title="High to prior close" window={before} lead={priorLead} limit={limit}/><Leg title="This week" window={week} lead={weekLead} limit={limit}/>
         <span><b>{single?"Single name":both?(priorLead.symbol===weekLead.symbol?"Same leader":"New leader"):"—"}</b>
-          <span>{both&&!single?priorLead.symbol+" → "+weekLead.symbol:r.status}</span></span>
-      </summary><div className="reversal-detail"><p>{r.overlap&&<>Moved in the basket’s direction in both legs · <b>{r.overlap.join(", ")||"No names"}</b>. </>}
+          <span>{both&&!single?company(priorLead.symbol)+" → "+company(weekLead.symbol):r.status}</span></span>
+      </summary><div className="reversal-detail"><p>{r.overlap&&<>Moved in the basket’s direction in both legs · <b>{r.overlap.map(company).join(", ")||"No names"}</b>. </>}
         {r.net!=null&&<>Cumulative return versus {g.label} since the high · <b>{signed(r.net,"%")}</b>.</>}</p>
         <table className="heat-driver-table"><thead><tr><th>Stock</th><th>High to prior close</th><th>This week</th></tr></thead><tbody>
-          {g.members.map(s=><tr key={s}><th>{s}</th>{[before,week].map((w,j)=><td key={j}>{signed(w?.drivers.find(d=>d.symbol===s)?.points," pp")}</td>)}</tr>)}</tbody></table>
+          {g.members.map(s=><tr key={s}><th>{company(s)}</th>{[before,week].map((w,j)=><td key={j}>{signed(w?.drivers.find(d=>d.symbol===s)?.points," pp")}</td>)}</tr>)}</tbody></table>
         <Newsflow snapshot={snapshot} id={id} windows={[before&&{...before,label:"High to prior close"},week&&{...week,label:"This week"}]}/></div>
       </details>;
     })}<p className="rv-source">Bars share a zero line and scale. The high is SPY’s latest closing high in 252 sessions. Each basket is equal-weighted monthly. Expand a layer for contributions in percentage points and dated news. Meta is a single-stock reference.</p></div></>}</>}

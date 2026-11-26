@@ -3,6 +3,7 @@ import PowerPointExport from "./PowerPointExport.jsx";
 import {wrapChartImageText} from "../../wrap-text.js";
 import {shortDate} from "./HistoryChart.jsx";
 import {periods} from "./heatmap-data.mjs";
+import {localText} from "../../locale.js";
 
 function renderHeatmap(table,period,start,end){
   const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
@@ -33,8 +34,8 @@ function renderHeatmap(table,period,start,end){
   function text(value,x,y,face,fill="#15202b",align="left"){
     ctx.font=face;ctx.fillStyle=fill;ctx.textAlign=align;ctx.textBaseline="middle";ctx.fillText(value,x,y);
   }
-  text("AI stack heatmap",padding,32,font(700,30));
-  text(periods[period]+" · "+shortDate(start)+" – "+shortDate(end),padding,63,font(600,19));
+  text(localText("AI stack heatmap"),padding,32,font(700,30));
+  text(localText(periods[period])+" · "+shortDate(start)+" – "+shortDate(end),padding,63,font(600,19));
   text(table.caption.innerText,padding,88,font(400,17));
   ctx.fillStyle="#eef1f3";ctx.fillRect(padding,headerY,bodyWidth,headerHeight);
   text(headers[0],padding+10,headerY+headerHeight/2,font(700,17));
@@ -54,7 +55,7 @@ function renderHeatmap(table,period,start,end){
     });
     y+=row.height;
   });
-  text("¹ Foundation models use Meta as a single-stock reference. A dash indicates unavailable history.",padding,y+23,font(400,15));
+  text(localText("¹ Foundation models use Meta as a single-stock reference. A dash indicates unavailable history."),padding,y+23,font(400,15));
   return canvas;
 }
 

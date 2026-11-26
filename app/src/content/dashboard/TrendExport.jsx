@@ -3,6 +3,7 @@ import PowerPointExport from "./PowerPointExport.jsx";
 import {calendarTicks} from "./calendar-ticks.mjs";
 import {shortDate} from "./HistoryChart.jsx";
 import {trendRows} from "./trends.mjs";
+import {language,localText} from "../../locale.js";
 
 export const averageLines=[
   {key:"ma50",name:"50-session average",colour:"var(--a-text)"},
@@ -18,7 +19,7 @@ function renderTrend({title,basis,rows,lines,marks,levels,averageOf},colours){
     return token.startsWith("var(")?colours.getPropertyValue(token.slice(4,-1)).trim():token;
   }
   function text(value,x,y,size,weight=400,align="left"){
-    ctx.fillStyle="#18232e";ctx.font=weight+" "+size+"px Arial, sans-serif";ctx.textAlign=align;ctx.fillText(value,x,y);
+    ctx.fillStyle="#18232e";ctx.font=weight+" "+size+"px Arial, sans-serif";ctx.textAlign=align;ctx.fillText(localText(value),x,y);
   }
   text(title,48,58,36,700);
   text(basis,48,100,23,600);
@@ -29,7 +30,7 @@ function renderTrend({title,basis,rows,lines,marks,levels,averageOf},colours){
     const available=plotted.includes(line);
     const label=line.name+(available?"":" (insufficient history)");
     ctx.font="18px Arial, sans-serif";
-    const width=60+ctx.measureText(label).width;
+    const width=60+ctx.measureText(localText(label)).width;
     if(legendX+width>1400){legendX=48;legendY+=32;}
     ctx.strokeStyle=colour(line.colour);ctx.lineWidth=3;ctx.setLineDash(line.dash?[9,6]:[]);
     ctx.beginPath();ctx.moveTo(legendX,legendY-6);ctx.lineTo(legendX+30,legendY-6);ctx.stroke();
@@ -70,7 +71,7 @@ function renderTrend({title,basis,rows,lines,marks,levels,averageOf},colours){
     });
     ctx.stroke();
   }
-  for(const tick of calendarTicks(rows,(right-left)*0.72)){
+  for(const tick of calendarTicks(rows,(right-left)*0.72,language())){
     const pos=x(tick.i);text(tick.label,pos,bottom+29,17,400,pos<left+45?"left":pos>right-45?"right":"center");
   }
   text("Simple moving averages of "+averageOf+" use the preceding 50 and 200 sessions, including the current close.",48,753,18);

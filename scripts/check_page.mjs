@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import {createServer} from "node:http";
 import {readFile} from "node:fs/promises";
 import {chromium} from "playwright-core";
+import {calendarTicks} from "../app/src/content/dashboard/calendar-ticks.mjs";
+
+for(const [dates,expected] of [
+  [["2026-10-30","2026-11-02"],["10月30日","11月2日"]],
+  [["2025-12-31","2026-01-02"],["12月31日","1月2日"]]
+])assert.deepEqual(calendarTicks(dates.map(date=>({date})),500,"zh-CN").map(t=>t.label),expected);
 
 const snapshot=JSON.parse(await readFile("app/src/data.json","utf8"));
 const document=await readFile("docs/index.html");
@@ -146,6 +152,58 @@ try{
       assert.ok(bounds&&navBounds&&bounds.y>=navBounds.y+navBounds.height-1&&bounds.y+bounds.height<=height,"Heading clipped on email entry: "+selector);
       console.log("Email heading",width,selector,Math.round(bounds.y));
     }
+    const chart=page.locator(".inline-panel .layer-trend");
+    await chart.getByLabel("Chart series").selectOption("VRT");
+    await chart.getByLabel("Chart window").selectOption("126");
+    const dataBefore=await chart.locator("svg path").evaluateAll(paths=>paths.map(p=>p.getAttribute("d")));
+    const heatValues=()=>page.locator("[data-heat-cell]").allTextContents();
+    const before=await heatValues();
+    await page.getByRole("button",{name:"简体中文",exact:true}).click();
+    await page.getByRole("heading",{name:"AI 产业链热力图"}).waitFor();
+    assert.deepEqual(await heatValues(),before);
+    assert.equal(await chart.getByLabel("图表序列").inputValue(),"VRT");
+    assert.equal(await chart.getByLabel("图表区间").inputValue(),"126");
+    assert.deepEqual(await chart.locator("svg path").evaluateAll(paths=>paths.map(p=>p.getAttribute("d"))),dataBefore);
+    const shared=page.url(),params=new URL(shared).searchParams;
+    for(const [k,v] of Object.entries({lang:"zh-CN",basis:"own",basket:"power",asof:review,stock:"VRT",window:"126"}))assert.equal(params.get(k),v);
+    await page.reload();
+    await chart.getByLabel("图表区间").waitFor();
+    assert.equal(await chart.getByLabel("图表区间").inputValue(),"126");
+    if(width===1280){
+      await page.evaluate(()=>{
+        const fill=CanvasRenderingContext2D.prototype.fillText;
+        window.exportLabels=[];
+        CanvasRenderingContext2D.prototype.fillText=function(value,...args){window.exportLabels.push(value);return fill.call(this,value,...args);};
+      });
+      for(const [button,title,required] of [["导出图表至 PowerPoint","图表图片","200日均线"],["导出至 PowerPoint","热力图图片","AI 产业链热力图"]]){
+        await page.getByRole("button",{name:button,exact:true}).click();
+        const preview=page.getByRole("dialog",{name:title});
+        assert.ok((await preview.getByRole("link",{name:"下载 PNG"}).getAttribute("download")).endsWith("-zh-CN.png"));
+        assert.ok(await page.evaluate(text=>window.exportLabels.includes(text),required));
+        await preview.getByRole("button",{name:"关闭",exact:true}).click();
+      }
+    }
+    for(const [tab,heading] of [["每周反转","每周反转"],["个股覆盖","个股与组合覆盖"],["信号观察","信号观察"],["历史信号收益","信号出现后表现如何？"],["投资地图","AI 产业链投资地图"],["热力图","AI 产业链热力图"]]){
+      await page.locator(".dashboard-nav").getByRole("link",{name:tab,exact:true}).click();
+      await page.getByRole("heading",{name:heading,exact:true}).first().waitFor();
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth),0);
+      if(tab==="个股覆盖"){
+        await page.getByRole("searchbox").fill("英伟达");
+        assert.ok(await page.locator(".cov-name").filter({hasText:"NVDA"}).count());
+      }
+    }
+    const cm=await page.evaluate(()=>{
+      const doc=document.documentElement,p=document.querySelector(".heat-view > p.basis"),text=p.firstChild;
+      const lengths=new Map();
+      for(const node of p.childNodes)if(node.nodeType===Node.TEXT_NODE){
+        for(let i=0;i<node.length;i++){const range=document.createRange();range.setStart(node,i);range.setEnd(node,i+1);const y=range.getBoundingClientRect().y;lengths.set(y,(lengths.get(y)||0)+1);}
+      }
+      const visible=[...document.querySelectorAll("main *")].filter(el=>el.getClientRects().length&&[...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim()));
+      return {width:doc.clientWidth,overflow:doc.scrollWidth-doc.clientWidth,minFont:Math.min(...visible.map(el=>parseFloat(getComputedStyle(el).fontSize))),chars:Math.max(...lengths.values())};
+    });
+    assert.equal(cm.width,width);assert.equal(cm.overflow,0);assert.ok(cm.minFont>=11);console.log("Chinese heatmap",JSON.stringify(cm));
+    await page.goto(base+"?lang=en#heatmap");
+    await page.getByRole("heading",{name:"AI stack heatmap",exact:true}).waitFor();
     assert.deepEqual(errors,[]);console.log(JSON.stringify(metrics));await page.close();
   }
 }finally{await browser?.close();server.close();}

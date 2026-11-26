@@ -2,6 +2,7 @@ import DashboardNav from "./DashboardNav.jsx";
 import React, {useState} from "react";
 import {shortDate} from "./HistoryChart.jsx";
 import {WeekControl,stockName} from "./Weekly.jsx";
+import {language} from "../../locale.js";
 
 const titleFor = side => side === "Bullish" ? "Bullish divergence" : "Relative exhaustion";
 const signed = value => (value > 0 ? "+" : "") + value.toFixed(2);
@@ -18,7 +19,8 @@ function Signal({item,snapshot,end,onPick}) {
   const ratio=rows[i].ratio;
   const drivers=[...e.drivers].sort((a,b)=>Math.abs(b.points)-Math.abs(a.points));
   const name=d=>({ESTC:"Elastic",SNOW:"Snowflake",MDB:"MongoDB"}[d.symbol]||stockName(snapshot,d.symbol).replace(/,? (Inc\.?|Corporation|Corp\.?|plc|Ltd\.?).*$/i,""));
-  const names=list=>new Intl.ListFormat("en-GB",{style:"long",type:"conjunction"}).format(list.map(name));
+  const zh=language()==="zh-CN";
+  const names=list=>new Intl.ListFormat(zh?"zh-CN":"en-GB",{style:"long",type:"conjunction"}).format(list.map(name));
   const earlier=drivers.filter(d=>d.first), later=drivers.filter(d=>d.pivot);
   const knownRatio=rows.find(row=>row.date===e.known).ratio;
   const history=snapshot.forwardReturns.filter(r=>r.layer===id && r.side===e.side &&
@@ -33,7 +35,8 @@ function Signal({item,snapshot,end,onPick}) {
     <div className="watch-heading"><div><small>{titleFor(e.side)}</small><h3>{g.name} · {bull?"weakness narrowed":"leadership narrowed"}</h3></div>
       <b className="watch-state">{closed?e.status:"Watching"}</b></div>
     <p className="basis">Flagged {shortDate(e.known)} · {closed?e.status+" "+shortDate(date):"awaiting confirmation"}</p>
-    <p>{g.name} {bull?"fell further behind":"pulled further ahead of"} {g.label}. <b>{later.length===0?"No stock":later.length===1?"Only "+names(later):names(later)}</b> reached a fresh 20-session {extreme} against the benchmark. At the previous {extreme}, {names(earlier)} did so.</p>
+    {zh?<p>组合相对{g.label}{bull?"进一步走弱":"进一步走强"}。本次创20个交易日相对新{bull?"低":"高"}的股票：<b>{names(later)||"无"}</b>。上次为{names(earlier)||"无"}。</p>:
+      <p>{g.name} {bull?"fell further behind":"pulled further ahead of"} {g.label}. <b>{later.length===0?"No stock":later.length===1?"Only "+names(later):names(later)}</b> reached a fresh 20-session {extreme} against the benchmark. At the previous {extreme}, {names(earlier)} did so.</p>}
     <p className="basis">Relative move needed at a daily close, measured from {shortDate(closed?e.known:date)}</p>
     <div className="watch-levels">{level("To confirm",e.trigger,bull)}{level("To cancel",e.boundary,!bull)}</div>
     <p className="watch-history">{history.length?<><b>{history.length} earlier {history.length===1?"flag":"flags"} in this basket.</b> Average relative return over the next 21 sessions, measured from the following close, was <b>{signed(historicalMean)}%</b>.</>:"No earlier flag of this type in this basket had a complete 21-session result by this close."} <a href={bull?"#outcomes":"#outcomes-exhaustion"}>Compare past outcomes →</a></p>

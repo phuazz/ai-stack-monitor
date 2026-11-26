@@ -1,9 +1,10 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {calendarTicks} from "./calendar-ticks.mjs";
+import {language} from "../../locale.js";
 
 export function shortDate(date) {
   // ISO dates carry an explicit UTC time. JavaScript numeric months are zero-indexed.
-  return new Intl.DateTimeFormat("en-GB", {day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(new Date(date+"T12:00:00Z"));
+  return new Intl.DateTimeFormat(language()==="zh-CN"?"zh-CN":"en-GB", {day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(new Date(date+"T12:00:00Z"));
 }
 
 export default function HistoryChart({rows, lines, title, marks=[], levels=[], countMax, zero=100}) {
@@ -25,7 +26,8 @@ export default function HistoryChart({rows, lines, title, marks=[], levels=[], c
   const ticks=count?[0,countMax]:[low,(high+low)/2,high];
   const selected=hover===null?null:rows[Math.min(hover,rows.length-1)];
   const readout=selected||rows.at(-1);
-  const dateTicks=useMemo(()=>calendarTicks(rows,width-left-right),[rows,width,left,right]);
+  const lang=language();
+  const dateTicks=useMemo(()=>calendarTicks(rows,width-left-right,lang),[rows,width,left,right,lang]);
   function path(key) {
     let connected=false;
     return rows.map((row,i)=>{

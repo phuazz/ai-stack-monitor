@@ -1,4 +1,5 @@
 import React,{useRef,useState} from "react";
+import {language} from "../../locale.js";
 
 export default function PowerPointExport({render,name,title,alt,buttonLabel="Export for PowerPoint"}){
   const dialog=useRef(null),artwork=useRef(null);
@@ -19,7 +20,7 @@ export default function PowerPointExport({render,name,title,alt,buttonLabel="Exp
   }
   return <><button type="button" className="action" onClick={open}>{buttonLabel}</button>
     <dialog className="heat-export" aria-label={title} ref={dialog} onClose={()=>{artwork.current=null;setPng("");}}>
-      <header><h3>{title}</h3>{png&&<><a className="action" href={png} download={name}>Download PNG</a>
+      <header><h3>{title}</h3>{png&&<><a className="action" href={png} download={language()==="zh-CN"?name.replace(/\.png$/,"-zh-CN.png"):name}>Download PNG</a>
         {navigator.clipboard?.write&&typeof ClipboardItem!=="undefined"&&<button type="button" className="action" onClick={copy}>Copy image</button>}</>}
         <button type="button" className="action" onClick={()=>dialog.current.close()}>Close</button></header>
       {status&&<p role="status">{status}</p>}

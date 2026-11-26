@@ -8,6 +8,8 @@ GitHub Actions checks at 09:00 Singapore time Tuesday through Saturday, then hou
 
 ## Local use
 
+The navigation switches between English and Simplified Chinese without closing the current chart. The language applies to all six views and both PowerPoint image exports. [Open the Chinese heatmap](https://phuazz.github.io/ai-stack-monitor/?lang=zh-CN#heatmap). A language in a shared link takes precedence over the browser’s saved preference. The Chinese view uses the same prices, baskets, attribution and signal calculations as English.
+
 The [investor map](https://phuazz.github.io/ai-stack-monitor/#map) groups the 13 layers by economic exposure. Each weekly review compares USD returns, returns versus SPY and returns versus each basket’s benchmark. The prior relative trend ends at the close where the review begins. Meta is a separate reference in the map. The weekly brief at `weekly-brief.json` carries the same figures for the two displayed weeks, with the NYSE final session and a completion flag. Its digest is published in `version.json`.
 
 Use Node 24 and Python 3.12. Run `npm ci` and `npm run dev` for the standalone interface. Run `npm run build` to create `docs/index.html`. With Chrome installed, `npm run smoke` exercises the built page and its chart export.

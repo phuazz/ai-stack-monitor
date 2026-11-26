@@ -10,6 +10,7 @@ import LayerTrend from "./LayerTrend.jsx";
 import InvestorContext from "./InvestorContext.jsx";
 import HeatmapExport from "./HeatmapExport.jsx";
 import {subtitles} from "./investor-context.mjs";
+import {localText,updateQuery} from "../../locale.js";
 
 const pct=x=>(x>0?"+":"")+x.toFixed(1)+"%";
 const standard=[["peak","Since market high"],["wtd","WTD"],["week","1W"],["month","1M"],["quarter","3M"],["half","6M"],["ytd","YTD"],["year","1Y"]];
@@ -50,13 +51,13 @@ function revealInlinePanel(){
 export default function Heatmap({snapshot}){
   const [period,setPeriod]=useState(()=>{
     const key=new URLSearchParams(window.location.search).get("period");
-    return Object.hasOwn(periods,key)&&key!=="custom"?key:"peak";
+    return Object.hasOwn(periods,key)?key:"peak";
   });
   const [endDate,setEnd]=useState(()=>{
     const date=new URLSearchParams(window.location.search).get("asof");
     return Object.hasOwn(snapshot.marketCloses,date)?date:snapshot.asOf;
   });
-  const [custom,setCustom]=useState("");
+  const [custom,setCustom]=useState(()=>new URLSearchParams(location.search).get("start")||"");
   const [mode,setMode]=useState("prices"),[h,setH]=useState("21");
   const [basis,setBasis]=useState(()=>{
     const requested=new URLSearchParams(window.location.search).get("basis");
@@ -69,7 +70,11 @@ export default function Heatmap({snapshot}){
     try{return localStorage.getItem(rowBasisKey)!=="false";}catch{return true;}
   });
   const [hidden,setHidden]=useState(savedHiddenPeriods);
-  const [chartSymbol,setChartSymbol]=useState(null);
+  const [chartSymbol,setChartSymbol]=useState(()=>{
+    const params=new URLSearchParams(location.search),symbol=params.get("stock");
+    const group=snapshot.groups[params.get("basket")??params.get("layer")];
+    return group?.members.includes(symbol)||symbol&&params.get("reference")===symbol?symbol:null;
+  });
   function saveHidden(next){
     setHidden(next);
     try{localStorage.setItem(columnsKey,JSON.stringify(next));}catch{/* The current view still retains the choice. */}
@@ -89,6 +94,12 @@ export default function Heatmap({snapshot}){
       return ()=>cancelAnimationFrame(frame);
     }
   },[]);
+  useEffect(()=>{
+    const pinDate=selected||reference||endDate!==snapshot.asOf||new URLSearchParams(location.search).has("asof");
+    updateQuery({period:period==="peak"?null:period,asof:pinDate?endDate:null,
+      basis:basis==="absolute"?null:basis,start:period==="custom"?custom:null,
+      basket:selected,layer:reference?.id,reference:reference?.role.symbol,stock:chartSymbol});
+  },[period,endDate,basis,custom,selected,reference,chartSymbol,snapshot.asOf]);
   const {dates,series,byDate}=useMemo(()=>{
     const market=snapshot.marketCloses,days=Object.keys(market).sort();
     const index=rowIndex(snapshot);
@@ -146,7 +157,7 @@ export default function Heatmap({snapshot}){
     }:backToCell;
     return <tr className="expanded-row"><td colSpan={columns.length+1}><div className="inline-panel" tabIndex="-1" onKeyDown={e=>{if(e.key==="Escape")back();}}>
       <div className="inline-heading"><div><h3>{role?role.name:snapshot.groups[id].name}</h3><p>{role?role.exposure:subtitles[id]}</p></div><button className="action" onClick={back}>Close detail</button></div>
-      <div className="inline-grid"><LayerTrend key={id+(role?.symbol||"")} {...{snapshot,id,role,basis,start,end}} series={chartSymbol??role?.symbol??"basket"} onSeriesChange={setChartSymbol}/>
+      <div className="inline-grid"><LayerTrend key={id+(role?.symbol||"")} {...{snapshot,id,role,basis,start,end}} shareWindow series={chartSymbol??role?.symbol??"basket"} onSeriesChange={setChartSymbol}/>
         {role?<ReferenceDetail group={snapshot.groups[id]} role={role} result={referenceResult(id,role,period)} {...{start,end,basis}} onBack={back}/>:
         <HeatDrivers key={id} {...{snapshot,id,period,start,end,basis}} peak={dates[peakIndex]} week={dates[indexFor("wtd")]} onBack={back}
           onStock={symbol=>{setChartSymbol(symbol);document.querySelector(".inline-grid .layer-trend svg")?.focus();}}/>}</div>
@@ -173,7 +184,7 @@ export default function Heatmap({snapshot}){
           <label className="reference-toggle"><input type="checkbox" checked={descriptions} onChange={e=>setDescriptions(e.target.checked)}/> Layer descriptions</label>
           <details className="column-picker" open><summary>Columns</summary><fieldset><legend>Comparison periods</legend>
             {standard.map(([key,label])=><label key={key}><input type="checkbox" checked={key===period||!hidden.includes(key)} disabled={key===period}
-              onChange={e=>saveHidden(e.target.checked?hidden.filter(x=>x!==key):[...hidden,key])}/>{label}{label!==periods[key]&&" · "+periods[key]}{key===period?" (active)":""}</label>)}
+              onChange={e=>saveHidden(e.target.checked?hidden.filter(x=>x!==key):[...hidden,key])}/>{label}{localText(label)!==localText(periods[key])&&" · "+periods[key]}{key===period?" (active)":""}</label>)}
             <button type="button" className="action" onClick={()=>saveHidden(defaultHidden)}>Restore default columns</button>
             <button type="button" className="action" onClick={()=>saveHidden([])}>Show all periods</button>
           </fieldset></details><HeatmapExport tableRef={tableRef} period={period} start={start} end={end} basis={basis}/></div>

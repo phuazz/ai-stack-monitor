@@ -4,11 +4,16 @@ import prices from "./reference-prices.json";
 import {trendRows} from "./trends.mjs";
 import backfill from "./chart-backfill.json";
 import TrendExport,{averageLines} from "./TrendExport.jsx";
+import {compactCompany,updateQuery} from "../../locale.js";
 
 const lines=[{key:"close",name:"Close",colour:"var(--t1)"},...averageLines];
-export default function LayerTrend({snapshot,id,role,basis,start,end,series,onSeriesChange}){
+export default function LayerTrend({snapshot,id,role,basis,start,end,series,onSeriesChange,shareWindow=false}){
   const group=snapshot.groups[id];
-  const [localSymbol,choose]=useState(role?.symbol||"basket"),[span,setSpan]=useState("252");
+  const [localSymbol,choose]=useState(role?.symbol||"basket"),[span,setSpan]=useState(()=>{
+    const value=shareWindow&&new URLSearchParams(location.search).get("window");
+    return ["0","21","63","126","252","756","1260"].includes(value)?value:"252";
+  });
+  function changeSpan(value){setSpan(value);if(shareWindow)updateQuery({window:value==="252"?null:value});}
   const symbol=series??localSymbol;
   const live=snapshot.queries[id].rows;
   const home=role&&snapshot.queries[role.main].rows;
@@ -30,8 +35,8 @@ export default function LayerTrend({snapshot,id,role,basis,start,end,series,onSe
   const last=data.at(-1),label=basis==="absolute"?"USD trend":"Trend versus "+(basis==="market"?"SPY":group.label);
   return <section className="layer-trend"><h3>{label}</h3><div className="selectors">
     {(series==null||onSeriesChange)&&<label className="choice">Chart series<select aria-label="Chart series" value={symbol} onChange={e=>(onSeriesChange??choose)(e.target.value)}>
-      <option value="basket">{group.name}</option>{[...new Set([...group.members,...(role?[role.symbol]:[])])].map(s=><option key={s}>{s}</option>)}</select></label>}
-    <label className="choice">Chart window<select aria-label="Chart window" value={span} onChange={e=>setSpan(e.target.value)}>{[["0","Selected period ("+shortDate(start)+" – "+shortDate(end)+")"],["21","1 month"],["63","3 months"],["126","6 months"],["252","1 year"],["756","3 years"],["1260","5 years"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label></div>
+      <option value="basket">{group.name}</option>{[...new Set([...group.members,...(role?[role.symbol]:[])])].map(s=><option key={s} value={s}>{compactCompany(s,snapshot.instruments)}</option>)}</select></label>}
+    <label className="choice">Chart window<select aria-label="Chart window" value={span} onChange={e=>changeSpan(e.target.value)}>{[["0","Selected period ("+shortDate(start)+" – "+shortDate(end)+")"],["21","1 month"],["63","3 months"],["126","6 months"],["252","1 year"],["756","3 years"],["1260","5 years"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label></div>
     {last?.close?<><HistoryChart rows={data} lines={lines.filter(l=>data.some(p=>Number.isFinite(p[l.key])))} title={label}/>
       <TrendExport rows={data} lines={lines} seriesId={symbol==="basket"?id:id+"-"+symbol} basisId={basis}
         title={symbol==="basket"?group.name:(snapshot.instruments[symbol]?.name??role?.name??symbol)+" · "+symbol}

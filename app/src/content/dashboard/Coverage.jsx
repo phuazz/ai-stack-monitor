@@ -4,6 +4,7 @@ import {shortDate} from "./HistoryChart.jsx";
 import {periods,startIndex} from "./heatmap-data.mjs";
 import {roles} from "./stock-roles.mjs";
 import refs from "./reference-prices.json";
+import {chinese} from "../../locale.js";
 
 const gaps={
   energy:"Grid transmission, fuel supply and regulated utilities.",
@@ -25,7 +26,7 @@ export default function Coverage({snapshot}){
   const [search,setSearch]=useState("");
   const [period,setPeriod]=useState("wtd");
   const groups=Object.entries(snapshot.groups),term=search.trim().toLowerCase();
-  function match(...words){return words.filter(Boolean).some(s=>s.toLowerCase().includes(term));}
+  function match(...words){return words.filter(Boolean).some(s=>s.toLowerCase().includes(term)||chinese(s).toLowerCase().includes(term));}
   const layerName=id=>id?"L"+groups.findIndex(([k])=>k===id)+" · "+snapshot.groups[id].title:"";
   const shown=groups.filter(([id,g])=>match(layerName(id),g.name,g.label,gaps[id],...g.members,...g.controls,
     ...[...g.members,...g.controls].map(s=>snapshot.instruments[s]?.name),

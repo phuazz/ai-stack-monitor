@@ -4,4 +4,8 @@ body{margin:0;background:var(--bg);color:var(--t1);font:16px/1.48 var(--sans)}
 .publication{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0 8px;border-bottom:1px solid var(--bd);font:500 14px var(--sans);color:var(--t2)}
 .publication a{color:var(--b-text)}
 button,input,select{font-family:inherit}
+.language-switch{display:inline-flex;align-items:center;justify-self:end;gap:2px;margin-left:auto;grid-column:1/-1}
+.language-switch button{cursor:pointer;border:1px solid var(--bd);border-radius:var(--radius);background:var(--bg2);color:var(--t1);padding:6px 10px;font:600 14px/1.4 var(--sans)}
+.language-switch button[aria-pressed=true]{background:var(--t1);color:var(--bg2)}
+html[lang="zh-CN"]{font-family:"Microsoft YaHei","PingFang SC",sans-serif}
 .chart-card{min-width:0;background:var(--bg2);border:1px solid var(--bd);padding:12px;border-radius:var(--radius)}
