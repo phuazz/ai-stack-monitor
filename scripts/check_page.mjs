@@ -19,6 +19,23 @@ try{
     assert.equal(new URL(page.url()).search,"");
     assert.equal(await page.locator(".publication time").getAttribute("datetime"),snapshot.asOf);
     assert.equal(await page.locator(".price-table .row-name").count(),13);
+    const picker=page.locator(".column-picker");
+    const headers=()=>page.locator(".price-table thead th").evaluateAll(nodes=>nodes.slice(1).map(n=>n.firstChild.textContent));
+    const defaults=["Since market high","1W","1M","3M","YTD"];
+    assert.deepEqual(await headers(),defaults);
+    assert.equal(await picker.evaluate(el=>el.open),true);
+    if(width===390){
+      await picker.getByRole("button",{name:"Show all periods"}).click();
+      assert.equal((await headers()).length,8);
+      await picker.getByRole("checkbox",{name:/^1M/}).uncheck();
+      await page.reload();
+      assert.ok(!(await headers()).includes("1M")&&(await headers()).includes("6M"));
+      await picker.getByRole("button",{name:"Restore default columns"}).click();
+      assert.deepEqual(await headers(),defaults);
+      await picker.locator("summary").click();
+      assert.equal(await picker.evaluate(el=>el.open),false);
+      await picker.locator("summary").click();
+    }
     const metrics=await page.evaluate(async()=>{
       await window.document.fonts.ready;
       const doc=window.document,root=doc.documentElement,p=doc.querySelector(".heat-summary p")||doc.querySelector(".heat-view > p.basis");

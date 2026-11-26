@@ -11,7 +11,8 @@ import HeatmapExport from "./HeatmapExport.jsx";
 import {subtitles} from "./investor-context.mjs";
 
 const pct=x=>(x>0?"+":"")+x.toFixed(1)+"%";
-const standard=[["wtd","WTD"],["week","1W"],["month","1M"],["quarter","3M"],["half","6M"],["ytd","YTD"],["year","1Y"]];
+const standard=[["peak","Since market high"],["wtd","WTD"],["week","1W"],["month","1M"],["quarter","3M"],["half","6M"],["ytd","YTD"],["year","1Y"]];
+const defaultHidden=["wtd","half","year"];
 const columnsKey="ai-stack-monitor.hidden-periods.v1";
 const rowBasisKey="ai-stack-monitor.show-row-basis.v1";
 const bases=[
@@ -27,8 +28,8 @@ function RowBasis({basis,group}){
 function savedHiddenPeriods(){
   try{
     const saved=JSON.parse(localStorage.getItem(columnsKey));
-    return Array.isArray(saved)?standard.map(([key])=>key).filter(key=>saved.includes(key)):[];
-  }catch{return [];}
+    return Array.isArray(saved)?standard.map(([key])=>key).filter(key=>saved.includes(key)):defaultHidden;
+  }catch{return defaultHidden;}
 }
 function colours(n){
   if(n===null||Math.abs(n)<0.05)return "heat-flat";
@@ -169,9 +170,10 @@ export default function Heatmap({snapshot}){
           }}/> Show return basis in rows</label>}
           <label className="reference-toggle"><input type="checkbox" checked={showReferences} onChange={e=>{setShowReferences(e.target.checked);setReference(null);}}/> Show reference stocks under their layers</label>
           <label className="reference-toggle"><input type="checkbox" checked={descriptions} onChange={e=>setDescriptions(e.target.checked)}/> Layer descriptions</label>
-          <details className="column-picker"><summary>Columns</summary><fieldset><legend>Comparison periods</legend>
+          <details className="column-picker" open><summary>Columns</summary><fieldset><legend>Comparison periods</legend>
             {standard.map(([key,label])=><label key={key}><input type="checkbox" checked={key===period||!hidden.includes(key)} disabled={key===period}
-              onChange={e=>saveHidden(e.target.checked?hidden.filter(x=>x!==key):[...hidden,key])}/>{label} · {periods[key]}{key===period?" (active)":""}</label>)}
+              onChange={e=>saveHidden(e.target.checked?hidden.filter(x=>x!==key):[...hidden,key])}/>{label}{label!==periods[key]&&" · "+periods[key]}{key===period?" (active)":""}</label>)}
+            <button type="button" className="action" onClick={()=>saveHidden(defaultHidden)}>Restore default columns</button>
             <button type="button" className="action" onClick={()=>saveHidden([])}>Show all periods</button>
           </fieldset></details><HeatmapExport tableRef={tableRef} period={period} start={start} end={end} basis={basis}/></div>
         {showReferences&&<p className="basis reference-guide">A reference confirms when both returns have the same sign and diverges when their signs differ. Flat means either move is below 0.05% in magnitude. Select a reference cell for the return gap. References have zero weight in the layer shown.</p>}
