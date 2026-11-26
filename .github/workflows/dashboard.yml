@@ -27,6 +27,7 @@ jobs:
     outputs:
       publish: ${{ steps.check.outputs.publish }}
       digest: ${{ steps.package.outputs.digest }}
+      brief_digest: ${{ steps.package.outputs.brief_digest }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,7 +60,11 @@ jobs:
           publish=true
           if [[ "$(jq -r .commit <<< "$live")" == "$(git rev-parse HEAD)" ]] && git diff --quiet -- app/src; then
             expected=$(jq -r .sha256 <<< "$live")
-            if curl -fsSL --max-time 30 "$url/?run=$GITHUB_RUN_ID" -o /tmp/live.html && echo "$expected  /tmp/live.html" | sha256sum --check --status; then publish=false; fi
+            expected_brief=$(jq -r .weeklyBriefSha256 <<< "$live")
+            if curl -fsSL --max-time 30 "$url/?run=$GITHUB_RUN_ID" -o /tmp/live.html &&
+               echo "$expected  /tmp/live.html" | sha256sum --check --status &&
+               curl -fsSL --max-time 30 "$url/weekly-brief.json?run=$GITHUB_RUN_ID" -o /tmp/live-brief.json &&
+               echo "$expected_brief  /tmp/live-brief.json" | sha256sum --check --status; then publish=false; fi
           fi
           echo "publish=$publish" >> "$GITHUB_OUTPUT"
       - name: Build and exercise the release
@@ -68,6 +73,7 @@ jobs:
           npm ci --ignore-scripts --no-fund --no-audit
           node scripts/check_attribution.mjs
           npm run build
+          python scripts/package_week.py
           python scripts/check_page.py docs/index.html
           npm run smoke
       - name: Record the verified market data and package identity
@@ -82,8 +88,10 @@ jobs:
           git fetch --quiet origin main
           test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
           digest=$(sha256sum docs/index.html | cut -d' ' -f1)
-          jq -n --arg commit "$(git rev-parse HEAD)" --arg asOf "$(jq -r .asOf app/src/data.json)" --arg sha256 "$digest" '{commit:$commit,asOf:$asOf,sha256:$sha256}' > docs/version.json
+          brief=$(sha256sum docs/weekly-brief.json | cut -d' ' -f1)
+          jq -n --arg commit "$(git rev-parse HEAD)" --arg asOf "$(jq -r .asOf app/src/data.json)" --arg sha256 "$digest" --arg weeklyBriefSha256 "$brief" '{commit:$commit,asOf:$asOf,sha256:$sha256,weeklyBriefSha256:$weeklyBriefSha256}' > docs/version.json
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "brief_digest=$brief" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@v3
         if: steps.check.outputs.publish == 'true'
         with:
@@ -101,13 +109,17 @@ jobs:
     steps:
       - id: pages
         uses: actions/deploy-pages@v4
-      - name: Verify published HTML against the tested build
+      - name: Verify published dashboard and weekly brief
         env:
           PAGE_URL: ${{ steps.pages.outputs.page_url }}
           EXPECTED: ${{ needs.prepare.outputs.digest }}
+          EXPECTED_BRIEF: ${{ needs.prepare.outputs.brief_digest }}
         run: |
           for attempt in {1..12}; do
-            if curl -fsSL --max-time 25 "${PAGE_URL}?release=$GITHUB_RUN_ID-$attempt" -o /tmp/dashboard.html && echo "$EXPECTED  /tmp/dashboard.html" | sha256sum --check --status; then exit 0; fi
+            if curl -fsSL --max-time 25 "${PAGE_URL}?release=$GITHUB_RUN_ID-$attempt" -o /tmp/dashboard.html &&
+               echo "$EXPECTED  /tmp/dashboard.html" | sha256sum --check --status &&
+               curl -fsSL --max-time 25 "${PAGE_URL%/}/weekly-brief.json?release=$GITHUB_RUN_ID-$attempt" -o /tmp/weekly.json &&
+               echo "$EXPECTED_BRIEF  /tmp/weekly.json" | sha256sum --check --status; then exit 0; fi
             sleep 10
           done
           exit 1

@@ -37,6 +37,32 @@ try{
     await dialog.getByRole("button",{name:"Close",exact:true}).click();
     await page.getByRole("link",{name:/Weekly reversals/}).first().click();
     await page.locator(".reversal-view").waitFor();
+    await page.goto(base+"#map",{waitUntil:"domcontentloaded"});
+    const map=page.locator(".pm-map");
+    await map.getByRole("heading",{name:"AI investor map",exact:true}).waitFor();
+    for(const period of [0,1]){
+      await map.getByLabel("Review period").selectOption(String(period));
+      assert.equal(await map.locator(".pm-layer").count(),13);
+      const baskets=Object.values(snapshot.groups).filter(g=>g.members.length>1);
+      const ahead=baskets.filter(g=>g.weeks[period].relative>0).length;
+      assert.ok((await map.locator(".pm-headline").innerText()).includes(ahead+" beat their layer benchmarks."));
+      for(const [id,g] of Object.entries(snapshot.groups)){
+        const row=map.locator('[data-layer="'+id+'"]');
+        assert.ok((await row.locator('[data-label="Week vs peers"]').innerText()).includes(g.weeks[period].relative.toFixed(1)+"%"));
+      }
+    }
+    const mapMetrics=await map.evaluate(el=>{
+      const doc=el.ownerDocument,p=el.querySelector(".pm-market"),style=getComputedStyle(p),ctx=doc.createElement("canvas").getContext("2d");
+      ctx.font=style.fontSize+" "+style.fontFamily;
+      const nodes=[...el.querySelectorAll("*")].filter(n=>n.getClientRects().length&&[...n.childNodes].some(c=>c.nodeType===3&&c.textContent.trim()));
+      return {width:doc.documentElement.clientWidth,overflow:Math.max(0,doc.documentElement.scrollWidth-doc.documentElement.clientWidth),
+        minFont:Math.min(...nodes.map(n=>parseFloat(getComputedStyle(n).fontSize))),
+        chars:Math.round(p.clientWidth*p.innerText.length/ctx.measureText(p.innerText).width)};
+    });
+    assert.equal(mapMetrics.width,width);assert.equal(mapMetrics.overflow,0);assert.ok(mapMetrics.minFont>=11);
+    console.log("Investor map",JSON.stringify(mapMetrics));
+    await map.locator('[data-layer="cloud"]').click();
+    await page.getByRole("heading",{name:"Weekly return drivers",exact:true}).waitFor();
     assert.deepEqual(errors,[]);console.log(JSON.stringify(metrics));await page.close();
   }
 }finally{await browser?.close();server.close();}
