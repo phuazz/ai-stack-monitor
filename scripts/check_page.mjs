@@ -63,6 +63,45 @@ try{
     console.log("Investor map",JSON.stringify(mapMetrics));
     await map.locator('[data-layer="cloud"]').click();
     await page.getByRole("heading",{name:"Weekly return drivers",exact:true}).waitFor();
+    await page.goto(base+"#coverage");
+    const coverage=page.locator(".coverage-view");
+    await coverage.getByRole("heading",{name:"Stock and basket coverage"}).waitFor();
+    assert.equal(await coverage.locator(".cov-layer-row").count(),13);
+    const search=coverage.getByRole("searchbox");
+    await search.fill("Cloudflare");
+    const one=coverage.locator(".cov-stock-row").filter({hasText:"NET"});
+    await one.click();
+    await coverage.getByRole("link",{name:"Stock chart",exact:true}).waitFor();
+    assert.equal(await coverage.locator(".cov-layer-row").count(),2);
+    await coverage.getByLabel("Return",{exact:true}).selectOption("usd");
+    await coverage.getByLabel("Period",{exact:true}).selectOption("peak");
+    await search.fill("");
+    for(const label of ["Stocks in focus","Layer baskets"]){
+      const switcher=coverage.getByRole("button",{name:label,exact:true});
+      if(await switcher.isVisible())await switcher.click();
+      const cm=await coverage.evaluate(root=>{
+        const d=root.ownerDocument, intro=root.querySelector(".cov-header p"),ctx=d.createElement("canvas").getContext("2d");
+        ctx.font=getComputedStyle(intro).font;
+        const nodes=[...root.querySelectorAll("*")].filter(n=>n.getClientRects().length&&[...n.childNodes].some(c=>c.nodeType===3&&c.textContent.trim()));
+        return {width:d.documentElement.clientWidth,overflow:d.documentElement.scrollWidth-d.documentElement.clientWidth,
+          minFont:Math.min(...nodes.map(n=>parseFloat(getComputedStyle(n).fontSize))),
+          chars:Math.round(intro.clientWidth*intro.innerText.length/ctx.measureText(intro.innerText).width)};
+      });
+      assert.equal(cm.width,width);assert.equal(cm.overflow,0);assert.ok(cm.minFont>=11);
+      console.log(label,JSON.stringify(cm));
+    }
+    await coverage.locator(".cov-layer-row").first().click();
+    await coverage.getByText("Coverage gap",{exact:true}).first().waitFor();
+    const review=snapshot.groups.power.weeks[1].end;
+    await page.goto(base+"?basket=power&asof="+review+"&period=peak&basis=own#heatmap");
+    await page.locator(".inline-panel .layer-trend svg").first().waitFor();
+    await page.evaluate(()=>window.document.fonts.ready);
+    for(const selector of [".inline-heading h3",".layer-trend > h3"]){
+      const title=page.locator(".inline-panel "+selector);
+      const bounds=await title.boundingBox();
+      assert.ok(bounds&&bounds.y>=0&&bounds.y+bounds.height<=height,"Heading clipped on email entry: "+selector);
+      console.log("Email heading",width,selector,Math.round(bounds.y));
+    }
     assert.deepEqual(errors,[]);console.log(JSON.stringify(metrics));await page.close();
   }
 }finally{await browser?.close();server.close();}

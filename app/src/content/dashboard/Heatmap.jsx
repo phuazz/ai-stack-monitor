@@ -39,6 +39,12 @@ function colours(n){
 function Select({label,value,set,opts}){
   return <label className="choice">{label}<select aria-label={label} value={value} onChange={e=>set(e.target.value)}>{opts.map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></label>;
 }
+function revealInlinePanel(){
+  const panel=document.querySelector(".inline-panel");
+  if(!panel)return;
+  panel.focus({preventScroll:true});
+  panel.querySelector(".inline-heading").scrollIntoView({block:"start",inline:"nearest"});
+}
 export default function Heatmap({snapshot}){
   const [period,setPeriod]=useState(()=>{
     const key=new URLSearchParams(window.location.search).get("period");
@@ -76,7 +82,10 @@ export default function Heatmap({snapshot}){
   const tableRef=useRef(null);
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
-    if(params.has("reference")||params.has("basket"))document.querySelector(".inline-panel")?.focus();
+    if(params.has("reference")||params.has("basket")){
+      const frame=requestAnimationFrame(revealInlinePanel);
+      return ()=>cancelAnimationFrame(frame);
+    }
   },[]);
   const {dates,series,byDate}=useMemo(()=>{
     const market=snapshot.marketCloses,days=Object.keys(market).sort();
@@ -116,12 +125,12 @@ export default function Heatmap({snapshot}){
   function selectCell(id,key,opener=null){
     rowOpener.current=opener;
     setReference(null);setSelected(id);setPeriod(key);setChartSymbol(null);
-    requestAnimationFrame(()=>document.querySelector(".inline-panel")?.focus());
+    requestAnimationFrame(revealInlinePanel);
   }
   function selectReference(id,role,key,opener=null){
     rowOpener.current=opener;
     setSelected(null);setPeriod(key);setReference({id,role});setChartSymbol(null);
-    requestAnimationFrame(()=>document.querySelector(".inline-panel")?.focus());
+    requestAnimationFrame(revealInlinePanel);
   }
   function backToCell(){
     (rowOpener.current??document.querySelector('[data-heat-cell="'+selected+'-'+period+'"]'))?.focus();

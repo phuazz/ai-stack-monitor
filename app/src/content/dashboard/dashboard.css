@@ -142,7 +142,40 @@
 .watch-grid{align-items:start;margin-block:10px 18px}.watch-grid .watch-card{margin:0;max-width:none}
 .ai-monitor .driver-grid,.ai-monitor .heat-driver-table,.ai-monitor .outcome-table{max-width:none}
 .review-news h4{margin:14px 0 5px}.review-news p{margin:5px 0 12px;max-width:72ch}
-.ai-monitor .coverage-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:10px;margin:12px 0}
+.cov-header,.cov-panel>header,.cov-controls,.cov-nav,.cov-switch{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cov-nav{gap:16px;font-size:14px;margin:4px 0 14px}
+.cov-header,.cov-panel>header{justify-content:space-between}
+.cov-header{margin-bottom:16px}.coverage-view .cov-header p{margin-top:4px;color:var(--t2)}
+.coverage-view .cov-header input{width:30ch;max-width:100%}
+.cov-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.cov-panel{min-width:0;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--radius);padding:14px 16px}
+.cov-panel>header{min-height:50px;gap:6px}.cov-controls{gap:8px}.cov-controls label{display:grid;color:var(--t2);font-weight:500}
+.cov-controls select{min-height:32px;padding:3px 6px;font-size:14px}
+.ai-monitor .cov-read{font-size:15px;margin:8px 0 4px;max-width:66ch}
+.ai-monitor .cov-source,.cov-panel footer{font-size:12px;color:var(--t2);line-height:1.5}
+.cov-panel footer{margin-top:12px;max-width:72ch}
+.cov-stock-row{display:grid;grid-template-columns:minmax(94px,1.1fr) minmax(78px,1.5fr) 66px;align-items:center;gap:8px}
+.cov-axis{font:500 12px/1.4 var(--sans);color:var(--t2);padding:8px 0 5px}
+.cov-axis-labels{display:flex;justify-content:space-between}.cov-stock-row>strong,.cov-axis>span:last-child{text-align:right}
+.cov-item{border-top:1px solid var(--bd)}.cov-item>summary{cursor:pointer;padding:7px 0;list-style:none}
+.cov-item>summary::-webkit-details-marker{display:none}.cov-item>summary:hover,.cov-item[open]>summary{background:var(--bg-hover)}
+.cov-item>summary b{font-size:14px}.cov-item>summary small{display:block}.cov-name b,.cov-layer-row b{color:var(--b-text)}
+.cov-stock-row>strong{font:500 13px/1.3 var(--mono)}
+.cov-track{height:20px;position:relative;background:linear-gradient(to right,transparent calc(50% - .5px),var(--t2) calc(50% - .5px),var(--t2) calc(50% + .5px),transparent calc(50% + .5px))}
+.cov-track i{display:block;position:absolute;top:4px;height:12px}
+.cov-track .positive{left:50%;background:var(--g-text)}.cov-track .negative{right:50%;background:var(--r-text)}
+.cov-layer-row{display:grid;grid-template-columns:32px minmax(98px,1fr) minmax(90px,.9fr);align-items:center;gap:8px;min-height:47px}
+.cov-number,.cov-tickers span{font:500 12px/1.4 var(--mono)}.cov-number{color:var(--t2)}
+.cov-tickers{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end}.cov-tickers span{padding:2px 5px;border-radius:3px;background:var(--bg3)}
+.cov-detail{border-left:3px solid var(--bd2);background:var(--bg3);padding:8px 12px;margin:0 0 8px;font-size:14px}
+.ai-monitor .cov-detail p{max-width:70ch;margin:3px 0}.cov-switch{display:none}
+@media(max-width:940px){
+ .cov-grid{grid-template-columns:1fr}.cov-switch{display:flex;gap:4px;margin-bottom:8px}
+ .cov-switch button{border:1px solid var(--bd2);background:var(--bg2);padding:8px 14px;border-radius:var(--radius)}
+ .cov-switch button[aria-pressed=true]{color:var(--bg2);background:var(--t1)}
+ .cov-grid[data-view=stocks] .cov-layers,.cov-grid[data-view=layers] .cov-stocks{display:none}
+}
+@media(max-width:600px){.cov-panel{padding:10px}.cov-stock-row{gap:5px}.cov-panel>header{align-items:flex-start}.cov-header{gap:8px}.cov-layer-row{gap:4px}}
 .coverage-cards article,.coverage-row,.reversal-row{border:1px solid var(--bd);border-radius:var(--radius);padding:10px 14px;background:var(--bg2)}
 .coverage-row,.reversal-row{margin:6px 0}.coverage-row p,.coverage-cards p{margin:5px 0;max-width:70ch}
 .ai-monitor .coverage-view input{width:min(100%,340px)}.coverage-view .choice,.reversal-view .choice{display:grid;gap:4px;width:fit-content;max-width:100%}
@@ -233,3 +266,4 @@
  .pm-layer [data-label]::before{content:attr(data-label);display:block;font:400 12px/1.3 var(--sans);color:var(--t2)}
  .pm-header{align-items:flex-start}.pm-header .choice{width:auto}
 }
+.inline-panel .inline-heading{scroll-margin-top:16px}
